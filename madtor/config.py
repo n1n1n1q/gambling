@@ -132,6 +132,10 @@ PROFIT_RANGES = {
         'traffickers_min': 450, 'traffickers_max': 533,
         'packagers_min': 225, 'packagers_max': 266
     },
+    0.5: {
+        'traffickers_min': 475, 'traffickers_max': 566,
+        'packagers_min': 237, 'packagers_max': 283
+    },
     0.6: {
         'traffickers_min': 500, 'traffickers_max': 600,
         'packagers_min': 250, 'packagers_max': 300

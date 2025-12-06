@@ -11,8 +11,8 @@ import time
 from multiprocessing import Pool, cpu_count
 import logging
 
-import config
-from simulation import MADTORSimulation, run_single_simulation
+import madtor.config as config
+from madtor.simulation import MADTORSimulation, run_single_simulation
 
 
 # Setup logging

@@ -5,7 +5,7 @@ Network statistics and Social Network Analysis metrics
 import math
 from typing import List, Dict, Set
 from collections import deque
-from agents import Agent, Network
+from madtor.agents import Agent, Network
 
 
 class NetworkStatistics:
@@ -97,8 +97,8 @@ class NetworkStatistics:
         max_deg = max(degrees)
         
         # Degree centralization
-        if max_deg > 0:
-            centralization = sum(max_deg - d for d in degrees) / ((n - 1) * (n - 2)) if n > 1 else 0
+        if max_deg > 0 and n > 2:
+            centralization = sum(max_deg - d for d in degrees) / ((n - 1) * (n - 2))
         else:
             centralization = 0
         
@@ -119,10 +119,12 @@ class NetworkStatistics:
         
         n = len(active_agents)
         betweenness_scores = {}
+        active_ids = set()
         
         # Initialize
         for agent in active_agents:
             betweenness_scores[agent.agent_id] = 0.0
+            active_ids.add(agent.agent_id)
         
         # Calculate shortest paths between all pairs (Floyd-Warshall inspired)
         for source in active_agents:
@@ -139,7 +141,9 @@ class NetworkStatistics:
                 path = self._find_shortest_path(source, target, active_agents)
                 if path:
                     for intermediate_id in path[1:-1]:  # Exclude source and target
-                        betweenness_scores[intermediate_id] += 1
+                        # Only count if intermediate node is in active set
+                        if intermediate_id in active_ids:
+                            betweenness_scores[intermediate_id] += 1
         
         # Normalize
         if n > 2:
@@ -221,9 +225,12 @@ class NetworkStatistics:
         return distances
     
     def _find_shortest_path(self, source: Agent, target: Agent, agents: List[Agent]) -> List[int]:
-        """Find shortest path between two agents using BFS"""
+        """Find shortest path between two agents using BFS, only through active agents"""
         if source.agent_id == target.agent_id:
             return [source.agent_id]
+        
+        # Create set of active agent IDs for fast lookup
+        active_ids = {agent.agent_id for agent in agents}
         
         visited = set()
         queue = deque([(source.agent_id, [source.agent_id])])
@@ -240,7 +247,8 @@ class NetworkStatistics:
             
             if agent_id in self.network.agents:
                 for neighbor_id in self.network.agents[agent_id].connections:
-                    if neighbor_id not in visited:
+                    # Only traverse through active agents
+                    if neighbor_id not in visited and neighbor_id in active_ids:
                         queue.append((neighbor_id, path + [neighbor_id]))
         
         return []  # No path found

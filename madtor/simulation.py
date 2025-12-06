@@ -9,12 +9,14 @@ import logging
 from typing import Dict, List, Tuple
 import json
 from datetime import datetime
+from pathlib import Path
 
 import madtor.config as config
 from madtor.agents import Trafficker, Packager, Retailer, Agent, Network
 from madtor.activities import DrugTraffickingActivities
 from madtor.law_enforcement import LawEnforcement
 from madtor.statistics import NetworkStatistics, DataCollector
+from madtor.utils import load_nodes_file, load_links_file, infer_agent_type
 
 
 class MADTORSimulation:
@@ -72,7 +74,7 @@ class MADTORSimulation:
             'unit_dose': config.UNIT_DOSE_2008,
             'unit_dose_min': config.UNIT_DOSE_MIN_2008,
             'unit_dose_max': config.UNIT_DOSE_MAX_2008,
-            'unit_dose_now': 0,
+            'unit_dose_now': config.UNIT_DOSE_2008,
             
             # Stock tracking
             'stock_drug': 0,
@@ -154,6 +156,79 @@ class MADTORSimulation:
     
     def _setup(self):
         """Initialize simulation"""
+        # Try to load from real data files
+        nodes_file = Path("madtor/data/T2_Nodes.prn")
+        links_file = Path("madtor/data/T2_Links.prn")
+        
+        if nodes_file.exists() and links_file.exists():
+            self._setup_from_real_data(nodes_file, links_file)
+        else:
+            self._setup_with_random_initialization()
+    
+    def _setup_from_real_data(self, nodes_file: Path, links_file: Path):
+        """Initialize simulation from real data files"""
+        # Load data
+        nodes_data = load_nodes_file(str(nodes_file))
+        links_data = load_links_file(str(links_file))
+        
+        # Create agents based on node data
+        agents = []
+        agent_map = {}  # Map node_id -> Agent
+        
+        for node_id, roles in nodes_data.items():
+            agent_type = infer_agent_type(node_id, {node_id: roles})
+            
+            if agent_type == "trafficker":
+                agent = Trafficker(f"{node_id}")
+            elif agent_type == "packager":
+                agent = Packager(f"{node_id}")
+            else:
+                agent = Retailer(f"{node_id}")
+            
+            agent.node_id = node_id
+            agent.role_category = roles.get('role_category1', 'n/a')
+            agents.append(agent)
+            agent_map[node_id] = agent
+        
+        # Create network
+        self.network = Network(agents)
+        
+        # Add links based on link data
+        for link in links_data:
+            source_id = link['source']
+            target_id = link['target']
+            familiarity = link['familiarity']
+            
+            if source_id in agent_map and target_id in agent_map:
+                self.network.add_link(
+                    agent_map[source_id].agent_id,
+                    agent_map[target_id].agent_id,
+                    f"{link['role1']}-{link['role2']}",
+                    familiarity
+                )
+        
+        # Initialize activities and law enforcement
+        self.activities = DrugTraffickingActivities(self.network, self.global_state)
+        self.law_enforcement = LawEnforcement(self.network, self.global_state)
+        self.statistics = NetworkStatistics(self.network)
+        
+        # Update agent counts in global state
+        traffickers = self.network.get_active_agents_by_type('trafficker')
+        packagers = self.network.get_active_agents_by_type('packager')
+        retailers = self.network.get_active_agents_by_type('retailer')
+        
+        self.global_state['n_active_traffickers'] = len(traffickers)
+        self.global_state['n_active_packagers'] = len(packagers)
+        self.global_state['n_active_retailers'] = len(retailers)
+        
+        # Calculate initial parameters
+        self._calculate_initial_parameters()
+        
+        # Initialize drug stocks
+        self._initialize_drug_stocks()
+    
+    def _setup_with_random_initialization(self):
+        """Initialize simulation with random agents (fallback)"""
         # Create agents
         agents = []
         
@@ -183,7 +258,7 @@ class MADTORSimulation:
         # Initialize drug stocks
         self._initialize_drug_stocks()
         
-        # Create initial network links (from data file in real scenario)
+        # Create initial network links (random)
         self._create_initial_links()
     
     def _calculate_initial_parameters(self):
@@ -335,16 +410,12 @@ class MADTORSimulation:
     
     def _account_for_expenses(self):
         """Account for weekly wages and expenses"""
-        traffickers = self.network.get_active_agents_by_type('trafficker')
-        packagers = self.network.get_active_agents_by_type('packager')
+        # Weekly operational costs
+        cost_per_day = self.global_state['cost_per_day']
+        weekly_cost = cost_per_day * 7
         
-        # Wages
-        wage_cost = (self.global_state['profit_of_traffickers'] * len(traffickers) * 7 +
-                    self.global_state['profit_of_packagers'] * len(packagers) * 7)
-        
-        self.global_state['cash_box'] -= wage_cost
-        self.global_state['expenses'] += wage_cost
-        self.global_state['weekly_profit_now'] -= wage_cost
+        self.global_state['cash_box'] -= weekly_cost
+        self.global_state['expenses'] += weekly_cost
     
     def _update_parameters(self):
         """Update model parameters monthly"""

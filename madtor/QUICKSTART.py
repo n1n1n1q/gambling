@@ -23,19 +23,6 @@ QUICK START GUIDE for MADTOR Python Implementation
 # ============================================================================
 
 # Quick Example 1: Single Simulation
-if __name__ == "__main__":
-    from madtor import MADTORSimulation
-    
-    # Create simulation
-    sim = MADTORSimulation(arrest_scenario=10)
-    
-    # Run for full 5 years (1825 ticks)
-    data = sim.run()
-    
-    # Check results
-    print(f"Organization survived: {sim.running}")
-    print(f"Final members: {sim.global_state['n_active_traffickers'] + sim.global_state['n_active_packagers'] + sim.global_state['n_active_retailers']}")
-    print(f"Final cash: €{sim.global_state['cash_box']:,.2f}")
 
 
 # ============================================================================
@@ -264,3 +251,17 @@ Key classes:
 - LawEnforcement: Disruptions and arrests
 - NetworkStatistics: SNA metrics
 """
+
+if __name__ == "__main__":
+    from madtor import MADTORSimulation
+    debug_simulation()
+    # # Create simulation
+    # sim = MADTORSimulation(arrest_scenario=10)
+    
+    # # Run for full 5 years (1825 ticks)
+    # data = sim.run()
+    
+    # # Check results
+    # print(f"Organization survived: {sim.running}")
+    # print(f"Final members: {sim.global_state['n_active_traffickers'] + sim.global_state['n_active_packagers'] + sim.global_state['n_active_retailers']}")
+    # print(f"Final cash: €{sim.global_state['cash_box']:,.2f}")

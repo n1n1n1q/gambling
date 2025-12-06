@@ -154,12 +154,11 @@ class Network:
         self.agents = {agent.agent_id: agent for agent in agents}
         self.links = []
     
-    def add_link(self, agent_id_1: int, agent_id_2: int, link_type: str = "neutral"):
-        """Create bidirectional link between two agents"""
+    def add_link(self, agent_id_1: int, agent_id_2: int, link_type: str = "neutral", familiarity: float = 1.0):
+        """Create link between two agents (directed from agent_id_1 to agent_id_2)"""
         if agent_id_1 in self.agents and agent_id_2 in self.agents:
             self.agents[agent_id_1].add_connection(agent_id_2, link_type)
-            self.agents[agent_id_2].add_connection(agent_id_1, link_type)
-            self.links.append(Link(agent_id_1, agent_id_2, 1.0, link_type))
+            self.links.append(Link(agent_id_1, agent_id_2, familiarity, link_type))
             return True
         return False
     

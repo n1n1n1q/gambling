@@ -4,10 +4,132 @@ Utility functions for MADTOR
 
 import json
 import csv
+import re
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import numpy as np
 from scipy import stats
+
+
+def parse_prn_file(filepath: str) -> List[Dict]:
+    """
+    Parse .prn file (tab/space-separated quoted strings)
+    Returns list of dictionaries with column headers as keys
+    Handles mixed quoted and unquoted values
+    """
+    try:
+        with open(filepath, 'r', encoding='latin-1') as f:
+            lines = f.readlines()
+    except Exception:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+    
+    if not lines:
+        return []
+    
+    # Parse header
+    header_line = lines[0].strip()
+    # Extract quoted values
+    headers = re.findall(r'"([^"]*)"', header_line)
+    
+    # Parse data rows
+    data = []
+    for line in lines[1:]:
+        if line.strip():
+            # Extract quoted values
+            quoted_values = re.findall(r'"([^"]*)"', line)
+            
+            # If we have fewer quoted values than headers, last value might be unquoted
+            if len(quoted_values) < len(headers):
+                # Extract the unquoted last part
+                last_quote_pos = line.rfind('"')
+                if last_quote_pos >= 0:
+                    after_quotes = line[last_quote_pos + 1:].strip()
+                    if after_quotes:
+                        quoted_values.append(after_quotes)
+            
+            if len(quoted_values) == len(headers):
+                row_dict = dict(zip(headers, quoted_values))
+                data.append(row_dict)
+    
+    return data
+
+
+def load_nodes_file(nodes_file: str) -> Dict[str, Dict]:
+    """
+    Load nodes from T2_Nodes.prn
+    Returns dict mapping node_id -> {'role1': ..., 'role2': ...}
+    """
+    nodes_data = parse_prn_file(nodes_file)
+    nodes = {}
+    
+    for row in nodes_data:
+        node_id = row.get('node-id', '').strip()
+        role1 = row.get('role-category1', '').strip()
+        role2 = row.get('role-category2', '').strip()
+        
+        if node_id:
+            nodes[node_id] = {
+                'role_category1': role1,
+                'role_category2': role2,
+            }
+    
+    return nodes
+
+
+def load_links_file(links_file: str) -> List[Dict]:
+    """
+    Load links from T2_Links.prn
+    Returns list of dicts with link information
+    """
+    links_data = parse_prn_file(links_file)
+    links = []
+    
+    for row in links_data:
+        node_id1 = row.get('node-id1', '').strip()
+        node_id2 = row.get('node-id2', '').strip()
+        role1 = row.get('role-category2-id1', '').strip()
+        role2 = row.get('role-category2-id2', '').strip()
+        
+        # Try to parse familiarity (handle special chars)
+        familiarity_str = row.get('Familiarit\u00e9', '').strip()
+        if not familiarity_str:
+            familiarity_str = row.get('Familiarit', '').strip()
+        
+        try:
+            familiarity = int(familiarity_str) if familiarity_str else 1
+        except ValueError:
+            familiarity = 1
+        
+        if node_id1 and node_id2:
+            links.append({
+                'source': node_id1,
+                'target': node_id2,
+                'role1': role1,
+                'role2': role2,
+                'familiarity': familiarity,
+            })
+    
+    return links
+
+
+def infer_agent_type(node_id: str, roles: Dict) -> str:
+    """
+    Infer agent type from node roles
+    Returns 'trafficker', 'packager', or 'retailer'
+    """
+    if node_id not in roles:
+        return 'retailer'  # Default
+    
+    role_data = roles[node_id]
+    role2 = role_data.get('role_category2', '').lower()
+    
+    if 'trafficker' in role2:
+        return 'trafficker'
+    elif 'packager' in role2 or 'refining' in role2:
+        return 'packager'
+    else:
+        return 'retailer'
 
 
 def export_to_csv(data: Dict, filename: str = "madtor_data.csv"):

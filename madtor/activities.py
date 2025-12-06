@@ -5,7 +5,7 @@ Drug trafficking activities: acquisition, packaging, and selling
 import random
 import math
 from typing import List, Tuple, Optional
-from agents import Trafficker, Packager, Retailer, Agent, Network
+from madtor.agents import Trafficker, Packager, Retailer, Agent, Network
 
 
 class DrugTraffickingActivities:

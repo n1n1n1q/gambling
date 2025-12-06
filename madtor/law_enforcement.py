@@ -4,7 +4,7 @@ Law enforcement interventions and disruption mechanisms
 
 import random
 from typing import List
-from agents import Network, Trafficker, Packager, Retailer, Agent
+from madtor.agents import Network, Trafficker, Packager, Retailer, Agent
 
 
 class LawEnforcement:
