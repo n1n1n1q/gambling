@@ -17,38 +17,38 @@ class LawEnforcement:
     def perform_minor_arrests(self, tick: int):
         """
         Perform minor periodic arrests (monthly probability-based).
-        Arrests a maximum of one random member per month.
+        Arrests a maximum of one random member per call.
         """
         if tick % 30 != 15:  # Day 15 of each month
             return
         
         efficiency_vs_security = self.state.get('efficiency_vs_security', 0.5)
-        
-        # Probability based on efficiency-vs-security
-        if efficiency_vs_security == 0.0:
-            probability = 1.01
-        elif efficiency_vs_security == 0.2:
-            probability = 0.84
-        elif efficiency_vs_security == 0.4:
-            probability = 0.67
-        elif efficiency_vs_security == 0.6:
-            probability = 0.80
-        elif efficiency_vs_security == 0.8:
-            probability = 2.00
-        else:  # 1.0
-            probability = 0.99
-        
+
+        # Probability draw mirroring NetLogo piecewise ranges
         rd = random.uniform(0, 9.99)
-        
+        if efficiency_vs_security == 0.0:
+            rd = random.uniform(0, 1.01)
+        elif efficiency_vs_security == 0.2:
+            rd = random.uniform(0, 0.84)
+        elif efficiency_vs_security == 0.4:
+            rd = random.uniform(0, 0.67)
+        elif efficiency_vs_security == 0.6:
+            rd = random.uniform(0, 0.80)
+        elif efficiency_vs_security == 0.8:
+            rd = random.uniform(0, 2.00)
+        elif efficiency_vs_security == 1.0:
+            rd = random.uniform(0, 0.99)
+
         if rd > (1 - efficiency_vs_security):
-            # Arrest one random agent
             active_agents = self.network.get_active_agents()
             if active_agents:
                 arrested = random.choice(active_agents)
                 self._arrest_agent(arrested, tick, is_major=False)
-                
-                # Update counts
                 self._update_arrest_counts(arrested, is_major=False)
+
+                # Remove drug from arrested agent and recalc stocks as NetLogo does after removal
+                arrested.drug = 0
+                self._recalculate_drug_stocks()
     
     def perform_major_arrest(self, tick: int, arrest_percentage: int):
         """

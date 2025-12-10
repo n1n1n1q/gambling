@@ -153,6 +153,11 @@ class Network:
     def __init__(self, agents: list):
         self.agents = {agent.agent_id: agent for agent in agents}
         self.links = []
+
+    def add_agent(self, agent: Agent):
+        """Add a new agent to the network"""
+        self.agents[agent.agent_id] = agent
+        return agent
     
     def add_link(self, agent_id_1: int, agent_id_2: int, link_type: str = "neutral", familiarity: float = 1.0):
         """Create link between two agents (directed from agent_id_1 to agent_id_2)"""
