@@ -3,7 +3,9 @@ Law enforcement interventions and disruption mechanisms
 """
 
 import random
+import math
 from typing import List
+import madtor.config as config
 from madtor.agents import Network, Trafficker, Packager, Retailer, Agent
 
 
@@ -53,34 +55,202 @@ class LawEnforcement:
     def perform_major_arrest(self, tick: int, arrest_percentage: int):
         """
         Perform major law enforcement action - arrest specified percentage of members.
+        Matches NetLogo 'attempt-of-disruption' procedure.
         
         Args:
             tick: Current simulation tick
             arrest_percentage: Percentage of members to arrest (0-100)
         """
-        active_agents = self.network.get_active_agents()
-        if not active_agents:
+        # Determine target group
+        target_of_disruption = self.state.get('target_of_disruption', 'turtles')
+        if target_of_disruption == 'traffickers':
+            target_agents = self.network.get_active_agents_by_type('trafficker')
+        elif target_of_disruption == 'packagers':
+            target_agents = self.network.get_active_agents_by_type('packager')
+        elif target_of_disruption == 'retailers':
+            target_agents = self.network.get_active_agents_by_type('retailer')
+        else:
+            target_agents = self.network.get_active_agents()
+
+        if not target_agents:
             return
+
+        # Save counts before disruption
+        traffickers = self.network.get_active_agents_by_type('trafficker')
+        packagers = self.network.get_active_agents_by_type('packager')
+        retailers = self.network.get_active_agents_by_type('retailer')
         
+        ntra = len(traffickers)
+        npac = len(packagers)
+        nret = len(retailers)
+        
+        arrested_retailers_family = self.state.get('arrested_retailers_family', 0)
+        # In NetLogo: set arrested-retailers-family count retailers
+        # But arrested-retailers-family is a cumulative counter in Python state?
+        # NetLogo: set arrested-retailers-family count retailers (resets it to current count before disruption)
+        # Then updates it after.
+        # Let's follow NetLogo exactly for this procedure's local logic, but we need to be careful about state persistence.
+        # In NetLogo 'arrested-retailers-family' is a global.
+        self.state['arrested_retailers_family'] = nret
+        
+        dead_members_family = self.state.get('dead_members_family', 0)
+        # NetLogo: set dead-members-family count turtles
+        self.state['dead_members_family'] = len(self.network.get_active_agents())
+
         # Calculate number to arrest
-        num_to_arrest = int(len(active_agents) * arrest_percentage / 100)
-        if num_to_arrest == 0 and arrest_percentage > 0:
-            num_to_arrest = 1
+        disruption_mode = self.state.get('disruption_mode', 'scenario1')
+        arrest_mode = self.state.get('arrested_mode', 'arrested%')
+        efficiency_vs_security = self.state.get('efficiency_vs_security', 0.5)
         
-        if num_to_arrest == 0:
-            return
+        arrested_count = 0
+        rd = random.random() # random-float 1
         
+        if disruption_mode == "scenario1":
+            if arrest_mode == "arrested%":
+                modified_arrested = arrest_percentage
+                arrested_count = int(modified_arrested / 100 * len(target_agents))
+            else:
+                arrested_num = self.state.get('arrested#', 0)
+                modified_arrested = arrested_num
+                arrested_count = arrested_num
+        else:
+            # Scenario 2 logic (and others)
+            if arrest_mode == "arrested%":
+                if efficiency_vs_security < 0.6:
+                    rd = 10 + rd * 10
+                    modified_arrested = arrest_percentage - (arrest_percentage * rd / 100)
+                    arrested_count = int(modified_arrested / 100 * len(target_agents))
+                elif efficiency_vs_security == 0.6:
+                    rd = -5 + rd * 10
+                    modified_arrested = arrest_percentage + (arrest_percentage * rd / 100)
+                    arrested_count = int(modified_arrested / 100 * len(target_agents))
+                else:
+                    rd = 10 + rd * 10
+                    modified_arrested = arrest_percentage + (arrest_percentage * rd / 100)
+                    arrested_count = int(modified_arrested / 100 * len(target_agents))
+            else:
+                arrested_num = self.state.get('arrested#', 0)
+                if efficiency_vs_security < 0.6:
+                    rd = 10 + rd * 10
+                    modified_arrested = arrested_num - (arrested_num * rd / 100)
+                    arrested_count = int(modified_arrested)
+                elif efficiency_vs_security == 0.6:
+                    rd = -5 + rd * 10
+                    modified_arrested = arrested_num + (arrested_num * rd / 100)
+                    arrested_count = int(modified_arrested)
+                else:
+                    rd = 10 + rd * 10
+                    modified_arrested = arrested_num + (arrested_num * rd / 100)
+                    arrested_count = int(modified_arrested)
+
+        if arrested_count > len(target_agents):
+            arrested_count = len(target_agents)
+            
         # Randomly select agents to arrest
-        arrested_agents = random.sample(active_agents, min(num_to_arrest, len(active_agents)))
+        if arrested_count > 0:
+            arrested_agents = random.sample(target_agents, arrested_count)
+            
+            # Arrest them
+            for agent in arrested_agents:
+                self._arrest_agent(agent, tick, is_major=True)
+                # Note: _update_arrest_counts is called inside _arrest_agent in original code? No, separate call.
+                # But here we want to track major arrests specifically.
+                # The original python code called _update_arrest_counts.
+                # NetLogo updates n-arrested-traffickers-major etc. based on count difference.
+            
+            # Confiscate their drugs
+            self._confiscate_drugs(arrested_agents)
+
+        # Update major arrest counters based on count difference (NetLogo logic)
+        current_traffickers = len(self.network.get_active_agents_by_type('trafficker'))
+        current_packagers = len(self.network.get_active_agents_by_type('packager'))
+        current_retailers = len(self.network.get_active_agents_by_type('retailer'))
+        current_total = len(self.network.get_active_agents())
+
+        if ntra > current_traffickers:
+            self.state['n_arrested_traffickers_major'] = self.state.get('n_arrested_traffickers_major', 0) + (ntra - current_traffickers)
+        if npac > current_packagers:
+            self.state['n_arrested_packagers_major'] = self.state.get('n_arrested_packagers_major', 0) + (npac - current_packagers)
+        if nret > current_retailers:
+            self.state['n_arrested_retailers_major'] = self.state.get('n_arrested_retailers_major', 0) + (nret - current_retailers)
+
+        # Update family support counts
+        # NetLogo: set dead-members-family dead-members-family * 0.1 + (dead-members-family - count turtles) - (arrested-retailers-family - count retailers)
+        dmf = self.state['dead_members_family']
+        arf = self.state['arrested_retailers_family']
         
-        # Arrest them
-        for agent in arrested_agents:
-            self._arrest_agent(agent, tick, is_major=True)
-            self._update_arrest_counts(agent, is_major=True)
+        self.state['dead_members_family'] = dmf * 0.1 + (dmf - current_total) - (arf - current_retailers)
         
-        # Confiscate their drugs
-        self._confiscate_drugs(arrested_agents)
+        # NetLogo: set arrested-retailers-family arrested-retailers-family * 0.56 + (arrested-retailers-family - count retailers)
+        self.state['arrested_retailers_family'] = arf * 0.56 + (arf - current_retailers)
+
+        # Recalculate drug stocks
+        self._recalculate_drug_stocks()
+
+        # Update tick counters for recruitment (resetting growth curves)
+        tick_max = 2 * 365
         
+        # Update ticks-traffickers
+        y_range_t = config.TRAFFICKERS_2010 - config.TRAFFICKERS_2008
+        if y_range_t != 0:
+            count_t = current_traffickers
+            # Formula: int (((y-range + 1) ^ ((count traffickers - traffickers-2008) / y-range) - 1) * tick-max / y-range)
+            # Note: NetLogo ^ is power.
+            try:
+                exponent = (count_t - config.TRAFFICKERS_2008) / y_range_t
+                base = y_range_t + 1
+                term = math.pow(base, exponent) - 1
+                self.state['ticks_traffickers'] = int(term * tick_max / y_range_t)
+            except (ValueError, ZeroDivisionError):
+                self.state['ticks_traffickers'] = 0
+        
+        # Update ticks-packagers
+        y_range_p = config.PACKAGERS_2010 - config.PACKAGERS_2008
+        if y_range_p != 0:
+            count_p = current_packagers
+            try:
+                exponent = (count_p - config.PACKAGERS_2008) / y_range_p
+                base = y_range_p + 1
+                term = math.pow(base, exponent) - 1
+                self.state['ticks_packagers'] = int(term * tick_max / y_range_p)
+            except (ValueError, ZeroDivisionError):
+                self.state['ticks_packagers'] = 0
+
+        # Update ticks-retailers
+        y_range_r = config.RETAILERS_2010 - config.RETAILERS_2008
+        if y_range_r != 0:
+            count_r = current_retailers
+            try:
+                exponent = (count_r - config.RETAILERS_2008) / y_range_r
+                base = y_range_r + 1
+                term = math.pow(base, exponent) - 1
+                self.state['ticks_retailers'] = int(term * tick_max / y_range_r)
+            except (ValueError, ZeroDivisionError):
+                self.state['ticks_retailers'] = 0
+
+        # Update wage multipliers based on disruption count (Scenario 3 logic mostly)
+        n_disruptions_obs = self.state.get('n_disruptions_obs', 1) # Default 1 for scenario 1/2
+        # In scenario 1/2, n_disruptions_obs is usually 1.
+        # If this function is called for scenario 3, n_disruptions_obs might be > 1.
+        
+        fm = 1
+        if n_disruptions_obs == 2:
+            fm = 15
+        elif n_disruptions_obs == 3:
+            fm = 20
+        elif n_disruptions_obs == 4:
+            fm = 25
+        elif n_disruptions_obs == 5:
+            fm = 30
+            
+        if n_disruptions_obs > 1:
+            if ntra > current_traffickers:
+                self.state['fm_traffickers_wage'] = self.state.get('fm_traffickers_wage', 0) + (ntra - current_traffickers) * fm
+            if npac > current_packagers:
+                self.state['fm_packagers_wage'] = self.state.get('fm_packagers_wage', 0) + (npac - current_packagers) * fm
+            if nret > current_retailers:
+                self.state['fm_retailers_wage'] = self.state.get('fm_retailers_wage', 0) + (nret - current_retailers) * fm
+
         # Trigger adaptation period
         stop_acquire_days = self.state.get('stop_acquire_days', 60)
         self.state['ticks_disruption'] = tick

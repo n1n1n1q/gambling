@@ -64,6 +64,9 @@ class MADTORSimulation:
         return {
             # Temporal
             "tick": 0,
+            "ticks_traffickers": 0,
+            "ticks_packagers": 0,
+            "ticks_retailers": 0,
             "current_year": 1,
             # Agent counts
             "n_active_traffickers": config.INITIAL_TRAFFICKERS,
@@ -137,6 +140,8 @@ class MADTORSimulation:
             "n_weekly_profit_max": 0,
             "n_weekly_profit_neg": 0,
             # Law enforcement
+            "n_disruptions_obs": 1,
+            "target_of_disruption": "turtles",
             "arrested_mode": "arrested%",
             "arrested%": self.arrest_scenario,
             "arrested#": 0,
@@ -411,6 +416,15 @@ class MADTORSimulation:
         """Execute one simulation tick (one day)"""
         self.tick += 1
         self.global_state["tick"] = self.tick
+        self.global_state["ticks_traffickers"] = (
+            self.global_state.get("ticks_traffickers", 0) + 1
+        )
+        self.global_state["ticks_packagers"] = (
+            self.global_state.get("ticks_packagers", 0) + 1
+        )
+        self.global_state["ticks_retailers"] = (
+            self.global_state.get("ticks_retailers", 0) + 1
+        )
 
         # Reset daily aggregates
         self.global_state["revenues"] = 0
@@ -428,6 +442,7 @@ class MADTORSimulation:
         # Major disruption at end of year 2
         if self.tick == config.MAJOR_DISRUPTION_TICK:
             self.law_enforcement.perform_major_arrest(self.tick, self.arrest_scenario)
+            self._update_parameters()
 
         # Check acquisition disruption
         if not self.law_enforcement.apply_acquisition_disruption(self.tick):
@@ -633,7 +648,11 @@ class MADTORSimulation:
 
         # Trafficker recruitment
         y_traffickers = round(
-            log_growth(config.TRAFFICKERS_2008, config.TRAFFICKERS_2010, tick)
+            log_growth(
+                config.TRAFFICKERS_2008,
+                config.TRAFFICKERS_2010,
+                self.global_state["ticks_traffickers"],
+            )
         )
         if len(traffickers) == 0 or y_traffickers > len(traffickers):
             profit_of_traffickers = (
@@ -663,7 +682,11 @@ class MADTORSimulation:
 
         # Packager recruitment
         y_packagers = round(
-            log_growth(config.PACKAGERS_2008, config.PACKAGERS_2010, tick)
+            log_growth(
+                config.PACKAGERS_2008,
+                config.PACKAGERS_2010,
+                self.global_state["ticks_packagers"],
+            )
         )
         if len(packagers) == 0 or y_packagers > len(packagers):
             profit_of_packagers = (
@@ -705,7 +728,11 @@ class MADTORSimulation:
 
         # Retailer recruitment
         y_retailers = round(
-            log_growth(config.RETAILERS_2008, config.RETAILERS_2010, tick)
+            log_growth(
+                config.RETAILERS_2008,
+                config.RETAILERS_2010,
+                self.global_state["ticks_retailers"],
+            )
         )
         rd = random.uniform(0, 2)
         if len(retailers) == 0 or (
