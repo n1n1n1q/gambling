@@ -307,13 +307,13 @@ class DataCollector:
         for metric in sna_metrics:
             self.data[metric] = []
     
-    def record(self, tick: int, global_state: dict, network_stats: dict):
+    def record(self, tick: int, global_state: dict, network_stats: dict, is_active: bool = True):
         """Record data at current tick"""
         self.data['tick'].append(tick)
         
         # Count agents
         counts = self._get_agent_counts(global_state)
-        self.data['n_active_organizations'].append(1)  # Active if running
+        self.data['n_active_organizations'].append(1 if is_active else 0)
         self.data['n_traffickers'].append(counts['trafficker'])
         self.data['n_packagers'].append(counts['packager'])
         self.data['n_retailers'].append(counts['retailer'])

@@ -121,39 +121,53 @@ EFFICIENCY_VS_SECURITY_VALUES = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
 # Profit ranges by efficiency-vs-security level
 PROFIT_RANGES = {
     0.0: {
-        'traffickers_min': 350, 'traffickers_max': 400,
-        'packagers_min': 175, 'packagers_max': 200
+        "traffickers_min": 350,
+        "traffickers_max": 400,
+        "packagers_min": 175,
+        "packagers_max": 200,
     },
     0.2: {
-        'traffickers_min': 400, 'traffickers_max': 466,
-        'packagers_min': 200, 'packagers_max': 233
+        "traffickers_min": 400,
+        "traffickers_max": 466,
+        "packagers_min": 200,
+        "packagers_max": 233,
     },
     0.4: {
-        'traffickers_min': 450, 'traffickers_max': 533,
-        'packagers_min': 225, 'packagers_max': 266
+        "traffickers_min": 450,
+        "traffickers_max": 533,
+        "packagers_min": 225,
+        "packagers_max": 266,
     },
     0.5: {
-        'traffickers_min': 475, 'traffickers_max': 566,
-        'packagers_min': 237, 'packagers_max': 283
+        "traffickers_min": 475,
+        "traffickers_max": 566,
+        "packagers_min": 237,
+        "packagers_max": 283,
     },
     0.6: {
-        'traffickers_min': 500, 'traffickers_max': 600,
-        'packagers_min': 250, 'packagers_max': 300
+        "traffickers_min": 500,
+        "traffickers_max": 600,
+        "packagers_min": 250,
+        "packagers_max": 300,
     },
     0.8: {
-        'traffickers_min': 200, 'traffickers_max': 700,
-        'packagers_min': 50, 'packagers_max': 350
+        "traffickers_min": 200,
+        "traffickers_max": 700,
+        "packagers_min": 50,
+        "packagers_max": 350,
     },
     1.0: {
-        'traffickers_min': 200, 'traffickers_max': 800,
-        'packagers_min': 50, 'packagers_max': 400
-    }
+        "traffickers_min": 200,
+        "traffickers_max": 800,
+        "packagers_min": 50,
+        "packagers_max": 400,
+    },
 }
 
 # ============================================================================
 # SIMULATION CONTROL
 # ============================================================================
-NUM_SIMULATIONS_PER_SCENARIO = 1000
+NUM_SIMULATIONS_PER_SCENARIO = 100
 RANDOM_SEED = None  # Set to None for random, or int for reproducibility
 
 # ============================================================================

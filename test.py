@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # Now run batch experiments
     print("\n" + "=" * 60)
     print("Running batch experiments...")
-    runner = ExperimentRunner()
+    runner = ExperimentRunner(output_dir="outputs_100orgs")
     results = runner.run_arrest_scenarios(
         disruption_mode=config.DISRUPTION_MODES[0],
         efficiency_vs_security=config.EFFICIENCY_VS_SECURITY_VALUES[3],

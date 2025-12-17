@@ -48,6 +48,14 @@ class LawEnforcement:
                 self._arrest_agent(arrested, tick, is_major=False)
                 self._update_arrest_counts(arrested, is_major=False)
 
+                # Update fm wages (NetLogo logic)
+                if arrested.agent_type == 'trafficker':
+                    self.state['fm_traffickers_wage'] = self.state.get('fm_traffickers_wage', 0) + 1
+                elif arrested.agent_type == 'packager':
+                    self.state['fm_packagers_wage'] = self.state.get('fm_packagers_wage', 0) + 1
+                elif arrested.agent_type == 'retailer':
+                    self.state['fm_retailers_wage'] = self.state.get('fm_retailers_wage', 0) + 1
+
                 # Remove drug from arrested agent and recalc stocks as NetLogo does after removal
                 arrested.drug = 0
                 self._recalculate_drug_stocks()

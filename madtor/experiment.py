@@ -36,7 +36,7 @@ class ExperimentRunner:
     def run_arrest_scenarios(
         self,
         arrest_scenarios: Optional[List[int]] = None,
-        num_simulations: int = 10,
+        num_simulations: int = config.NUM_SIMULATIONS_PER_SCENARIO,
         num_workers: Optional[int] = None,
         disruption_mode: str = "scenario1",
         efficiency_vs_security: float = 0.6,

@@ -1,0 +1,90 @@
+{
+  "0": {
+    "arrest_scenario": 0,
+    "num_simulations": 100,
+    "num_active_at_end": 18,
+    "survival_rate": 0.18,
+    "avg_final_cash_box": 4469774.981484887,
+    "median_final_cash_box": 4430524.179055204
+  },
+  "5": {
+    "arrest_scenario": 5,
+    "num_simulations": 100,
+    "num_active_at_end": 26,
+    "survival_rate": 0.26,
+    "avg_final_cash_box": 3798849.261676009,
+    "median_final_cash_box": 3906365.7482299614
+  },
+  "10": {
+    "arrest_scenario": 10,
+    "num_simulations": 100,
+    "num_active_at_end": 22,
+    "survival_rate": 0.22,
+    "avg_final_cash_box": 4083020.2085772827,
+    "median_final_cash_box": 4628265.009099331
+  },
+  "20": {
+    "arrest_scenario": 20,
+    "num_simulations": 100,
+    "num_active_at_end": 18,
+    "survival_rate": 0.18,
+    "avg_final_cash_box": 3837418.096090359,
+    "median_final_cash_box": 3878288.2573942873
+  },
+  "30": {
+    "arrest_scenario": 30,
+    "num_simulations": 100,
+    "num_active_at_end": 14,
+    "survival_rate": 0.14,
+    "avg_final_cash_box": 3199207.06724635,
+    "median_final_cash_box": 3394020.0767803714
+  },
+  "40": {
+    "arrest_scenario": 40,
+    "num_simulations": 100,
+    "num_active_at_end": 14,
+    "survival_rate": 0.14,
+    "avg_final_cash_box": 3059892.1453305115,
+    "median_final_cash_box": 3133986.7830996346
+  },
+  "50": {
+    "arrest_scenario": 50,
+    "num_simulations": 100,
+    "num_active_at_end": 7,
+    "survival_rate": 0.07,
+    "avg_final_cash_box": 2463227.078967267,
+    "median_final_cash_box": 2496070.905205041
+  },
+  "60": {
+    "arrest_scenario": 60,
+    "num_simulations": 100,
+    "num_active_at_end": 4,
+    "survival_rate": 0.04,
+    "avg_final_cash_box": 2113128.413020468,
+    "median_final_cash_box": 2455096.746486131
+  },
+  "70": {
+    "arrest_scenario": 70,
+    "num_simulations": 100,
+    "num_active_at_end": 0,
+    "survival_rate": 0.0,
+    "avg_final_cash_box": 0,
+    "median_final_cash_box": 0
+  },
+  "80": {
+    "arrest_scenario": 80,
+    "num_simulations": 100,
+    "num_active_at_end": 0,
+    "survival_rate": 0.0,
+    "avg_final_cash_box": 0,
+    "median_final_cash_box": 0
+  },
+  "90": {
+    "arrest_scenario": 90,
+    "num_simulations": 100,
+    "num_active_at_end": 0,
+    "survival_rate": 0.0,
+    "avg_final_cash_box": 0,
+    "median_final_cash_box": 0
+  }
+}
